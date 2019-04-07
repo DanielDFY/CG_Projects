@@ -1,4 +1,4 @@
 # Demo
 
-<https://github.com/DanielDFY/CG_Projects/blob/master/Project%201/scanConversion.html>
+<https://htmlpreview.github.io/?https://github.com/DanielDFY/CG_Projects/blob/master/Project%201/scanConversion.html>
 
