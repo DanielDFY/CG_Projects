@@ -85,7 +85,7 @@
         c.addEventListener('mousemove', (event) => {
             if (typeof(handleVtx) == 'undefined') return;
             vertex_pos[handleVtx] = [event.offsetX, event.offsetY, 0];
-            init();
+            update(handleVtx);
         });
 
         // initialization
