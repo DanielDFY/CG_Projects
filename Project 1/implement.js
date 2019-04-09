@@ -50,7 +50,7 @@ function getIntersections(row, points, edges, lastCount) {
       intersections.push(points[i][0]);
       waitList.push(points[i][0]);
       lines[i] = undefined;
-      lines[(i + VERTICES - 1) % VERTICES] = undefined;
+      lines[(i + points.length - 1) % points.length] = undefined;
     }
   }
 
@@ -160,8 +160,10 @@ function init() {
     drawPolygon(cxt, vertices, color);
   }
   // draw handles
-  for (var point of vertex_pos) {
-    drawHandle(point);
+  for (var i = 0; i < polygon.length; ++i) {
+    for (var point of idxToPoints(polygon[i])) {
+      drawHandle(point);
+    }
   }
 }
 
@@ -190,8 +192,10 @@ function update(handleVtx) {
       var color = vertex_color[polygon[idx][0]];
       drawPolygon(cxt, idxToPoints(polygon[idx]), color);
     }
-    for (var point of vertex_pos) {
-      drawHandle(point);
+    for (var i = 0; i < polygon.length; ++i) {
+      for (var point of idxToPoints(polygon[i])) {
+        drawHandle(point);
+      }
     }
   }
 }
