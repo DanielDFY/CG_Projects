@@ -97,14 +97,15 @@ function getQuadDistance(p1, p2) {
 }
 
 function findPolygon(vertex) {
+  var list = []
   for (var i = 0; i < polygon.length; ++i) {
     for (var idx of polygon[i]) {
       if (vertex == idx) {
-        return i;
+        list.push(i);
       }
     }
   }
-  return null;
+  return list;
 }
 
 function idxToPoints(indices) {
@@ -167,14 +168,16 @@ function init() {
 function update(handleVtx) {
   // clear the canvas
   cxt.clearRect(0, 0, canvasSize.maxX, canvasSize.maxY); 
-  var lastPolyIdx = findPolygon(handleVtx);
-  if (lastPolyIdx == null) {
+  var list = findPolygon(handleVtx);
+  if (!list.length) {
     init();
     return;
   } else {
     for (var i = 0; i < polygon.length; ++i) {
-      if (idx == lastPolyIdx) {
-        continue;
+      for (var j = 0; j < list.length; ++j) {
+        if (idx == list[j]) {
+          continue;
+        }
       }
       var vertices = [];
       for (var idx of polygon[i]) {
@@ -183,8 +186,10 @@ function update(handleVtx) {
       var color = vertex_color[polygon[i][0]];
       drawPolygon(cxt, vertices, color);
     }
-    var color = vertex_color[polygon[lastPolyIdx][0]];
-    drawPolygon(cxt, idxToPoints(polygon[lastPolyIdx]), color);
+    for (var idx of list) {
+      var color = vertex_color[polygon[idx][0]];
+      drawPolygon(cxt, idxToPoints(polygon[idx]), color);
+    }
     for (var point of vertex_pos) {
       drawHandle(point);
     }
