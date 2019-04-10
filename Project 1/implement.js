@@ -92,6 +92,13 @@ function getIntersections(row, points, edges, lastCount) {
   return intersections;
 }
 
+function getHandleIntersections(row, centralPoint) {
+  var deltaYQ = (row - centralPoint[1]) * (row - centralPoint[1]);
+  if (deltaYQ >= RADIUSQUAD) return null;
+  var delta = Math.sqrt(RADIUSQUAD - deltaYQ);
+  return [centralPoint[0] - delta, centralPoint[0] + delta];
+}
+
 function getQuadDistance(p1, p2) {
   return (p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1]);
 }
@@ -135,13 +142,9 @@ function drawPolygon(cxt, points, color) {
 function drawHandle(centralPoint) {
   // check every pixel, if in any handle, fill it red, else if on any outline, fill it black
   for (var row = centralPoint[1] - HANDLEFIELDHALFEDGE; row < centralPoint[1] + HANDLEFIELDHALFEDGE; ++row) {
-    for (var col = centralPoint[0] - HANDLEFIELDHALFEDGE; col < centralPoint[0] + HANDLEFIELDHALFEDGE; ++col) {
-      var dist = getQuadDistance([col, row], centralPoint);
-      if (dist < RADIUSQUAD){
-        drawPoint(cxt, col, row, HANDLEFILLCOLOR);
-      } else if (dist < RADIUSQUAD + OUTLINEOFFSET){
-        drawPoint(cxt, col, row, HANDLEOUTLINECOLOR);
-      }
+    var intersactions = getHandleIntersections(row, centralPoint);
+    if (intersactions != null) {
+      drawLine(cxt, intersactions[0], row, intersactions[1], row, HANDLECOLOR);
     }
   }
 }

@@ -38,7 +38,6 @@ const quadrilateral = [
 var polygon = quadrilateral;
 
 const RADIUSQUAD = 100;                 // radius of handle is 10
-const OUTLINEOFFSET = 21;               // outline of handle
-const HANDLEFIELDHALFEDGE = 15;         // half edge length of square field contaning handle
-const HANDLEFILLCOLOR = [255, 0, 0];    // red handle
+const HANDLEFIELDHALFEDGE = 10;         // half edge length of square field contaning handle (handle radius)
+const HANDLECOLOR = [255, 0, 0];        // red handle
 const HANDLEOUTLINECOLOR = [0, 0, 0];   // black handle outline
