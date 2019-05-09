@@ -2,7 +2,7 @@
 
 ### Demo
 
-https://htmlpreview.github.io/?https://github.com/DanielDFY/CG_Projects/blob/master/Project%202/demo.html
+[WebGL Interactive Demo](https://htmlpreview.github.io/?https://github.com/DanielDFY/CG_Projects/blob/master/Project 2/demo.html)
 
 
 
