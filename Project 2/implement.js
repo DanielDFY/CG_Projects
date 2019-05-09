@@ -6,6 +6,7 @@ var gl;
 var isEditable;
 var showBorder;
 var doAnimation;
+var showTexture;
 
 // time register
 var last;
@@ -20,6 +21,7 @@ var handlerIdx;
 // renderers
 var triRenderer;
 var borderRenderer;
+var textureRenderer;
 
 // constants
 const ANGLE_STEP = 45;
@@ -32,6 +34,7 @@ function init() {
     isEditable = true;
     showBorder = true;
     doAnimation = false;
+    showTexture = false;
     last = 0;
     current = 0;
     duration = 0;
@@ -93,11 +96,16 @@ function init() {
             case 69:
                 switch_resetAnimation();
                 return;
+            // press 'I'
+            case 73:
+                switch_texture();
+                return;
         }
     });
 
     triRenderer = new TriRenderer(gl);
     borderRenderer = new BorderRenderer(gl);
+    textureRenderer = new TextureRenderer(gl);
 }
 
 // control functions
@@ -126,6 +134,11 @@ function switch_animation() {
     }
 }
 
+function switch_texture() {
+    showTexture = !showTexture;
+    draw();
+}
+
 // animation player
 function tick() {
     if(!doAnimation) return;
@@ -144,12 +157,19 @@ function draw() {
 
     var triBuffer = [];
     var borderBuffer = [];
+    var textureBuffer = [];
     for (var p of polygon) {
         triBuffer = triBuffer.concat(createTriInput(p, scale));
         borderBuffer = borderBuffer.concat(createBorderInput(p, scale));
+        textureBuffer = textureBuffer.concat(createTextrueInput(p, scale));
     }
     
-    triRenderer.render(triBuffer, angle);
+    if (!showTexture) {
+        triRenderer.render(triBuffer, angle);
+    } else {
+        textureRenderer.render(textureBuffer, angle);
+    }
+
     if (showBorder) {
         borderRenderer.render(borderBuffer, angle);   
     }
@@ -213,6 +233,16 @@ function createBorderInput(polygon, scale) {
     return result;
 }
 
+function createTextrueInput(polygon, scale) {
+    var order = [0, 1, 2, 2, 3, 0];
+    var result = [];
+    for (var idx of order) {
+        var pos = vertices[polygon[idx]];
+        result = result.concat(pos.map((x) => x * scale)).concat(pos.map((x) => (x + 1) / 2));
+    }
+    return result;
+}
+
 // renderers
 class TriRenderer {
     constructor(gl) {
@@ -237,12 +267,12 @@ class TriRenderer {
 
         this.program = createProgram(gl, VSHADER_SOURCE, FSHADER_SOURCE);
         if (!this.program) {
-            throw "Failed to create program for triangle rendering"
+            throw "Failed to create program for triangle rendering";
         }
 
         this.buffer = gl.createBuffer();
         if (!this.buffer) {
-            throw "Failed to create buffer for triangle rendering"
+            throw "Failed to create buffer for triangle rendering";
         }
     }
     
@@ -310,12 +340,12 @@ class BorderRenderer {
 
         this.program = createProgram(gl, VSHADER_SOURCE, FSHADER_SOURCE);
         if (!this.program) {
-            throw "Failed to create program for border rendering"
+            throw "Failed to create program for border rendering";
         }
 
         this.buffer = gl.createBuffer();
         if (!this.buffer) {
-            throw "Failed to create buffer for border rendering"
+            throw "Failed to create buffer for border rendering";
         }
     }
 
@@ -351,6 +381,124 @@ class BorderRenderer {
         this.gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
         
         this.gl.drawArrays(gl.LINES, 0, bufferArray.length / 2);
+    }
+}
+
+class TextureRenderer {
+    constructor(gl) {
+        this.gl = gl;
+
+        var VSHADER_SOURCE = 
+            'attribute vec4 a_Position;\n' +
+            'attribute vec2 a_TexCoord;\n' +
+            'varying vec2 v_TexCoord;\n' +
+            'uniform mat4 u_ModelMatrix;\n' +
+            'void main() {\n' +
+            '   gl_Position = u_ModelMatrix * a_Position;\n' +
+            '   v_TexCoord = a_TexCoord;\n' +
+            '}\n';
+
+        var FSHADER_SOURCE = 
+            'precision mediump float;\n' +
+            'uniform sampler2D u_Sampler;\n' +
+            'varying vec2 v_TexCoord;\n' +
+            'void main() {\n' +
+            '   gl_FragColor = texture2D(u_Sampler, v_TexCoord);\n' +
+            '}\n';
+
+        this.program = createProgram(gl, VSHADER_SOURCE, FSHADER_SOURCE);
+        if (!this.program) {
+            throw "Failed to create program for texture rendering";
+        }
+
+        this.buffer = gl.createBuffer();
+        if (!this.buffer) {
+            throw "Failed to create buffer for texture rendering";
+        }
+
+        this.texture = gl.createTexture();
+        if (!this.texture) {
+            throw "Failed to create the texture object.";
+        }
+
+        this.image = new Image();
+        if (!this.image) {
+            throw "Failed to create the image object.";
+        }
+        this.image.onload = () => {
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);  // Flip the image's y axis
+        
+            gl.activeTexture(gl.TEXTURE0);              // Enable the texture unit 0
+            gl.bindTexture(gl.TEXTURE_2D, this.texture);
+            
+            // Set the texture parameters
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, this.image);
+        }
+    
+        this.image.crossOrigin = "";
+        this.image.src = './Resources/girl.jpg';
+    }
+
+    render(bufferArray, angle) {
+        bufferArray = new Float32Array(bufferArray);
+
+        this.gl.useProgram(this.program);
+        this.gl.program = this.program;
+        
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, bufferArray, this.gl.DYNAMIC_DRAW);
+        var FSIZE = bufferArray.BYTES_PER_ELEMENT;
+
+        var a_Position = this.gl.getAttribLocation(this.gl.program, 'a_Position');
+        if (a_Position < 0) {
+            console.log('Failed to get the storage locaiton of a_Position');
+            return;
+        }
+
+        this.gl.vertexAttribPointer(a_Position, 2, this.gl.FLOAT, false, FSIZE * 4, 0);
+        this.gl.enableVertexAttribArray(a_Position);
+
+        var a_TexCoord = this.gl.getAttribLocation(this.gl.program, 'a_TexCoord');
+        if (a_TexCoord < 0) {
+            console.log('Failed to get the storage locaiton of a_TexCoord');
+            return;
+        }
+    
+        this.gl.vertexAttribPointer(a_TexCoord, 2, this.gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
+        this.gl.enableVertexAttribArray(a_TexCoord);
+
+        this.gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+        // texture mapping
+        if (!this.initTextures(this.gl)) {
+            throw 'Failed to initialize texture';
+        }
+
+        var u_ModelMatrix = this.gl.getUniformLocation(this.gl.program, 'u_ModelMatrix');
+        if (!u_ModelMatrix) {
+            console.log('Failed to get the storage location of u_ModelMatrix');
+            return;
+        }
+        
+        var modelMatrix = new Matrix4();
+        modelMatrix.setRotate(angle, 0, 0, 1);
+        this.gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+        
+        this.gl.drawArrays(gl.TRIANGLES, 0, bufferArray.length / 4);
+    }
+
+    initTextures(gl) {
+        var u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
+        if (u_Sampler < 0) {
+            console.log('Failed to get the storage locaiton of u_Sampler');
+            return -1;
+        }
+        gl.uniform1i(u_Sampler, 0);
+    
+        return true;
     }
 }
 
