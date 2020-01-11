@@ -1,3 +1,3 @@
-# CG_Projects
+# WebGL_Demo
 
-Course projects of computer graphics
+Course projects of computer graphics based on WebGL
